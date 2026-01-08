@@ -6,6 +6,11 @@ export async function GET() {
     const flyers = await prisma.flyer.findMany({
       orderBy: { createdAt: "desc" },
       include: {
+        subcategory: {
+          include: {
+            category: true,
+          },
+        },
         _count: { select: { views: true, requests: true } },
       },
     });
@@ -22,11 +27,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { title, description, imageUrl } = await request.json();
+    const { title, description, imageUrl, subcategoryId } = await request.json();
 
-    if (!title || !imageUrl) {
+    if (!title || !imageUrl || !subcategoryId) {
       return NextResponse.json(
-        { error: "Title and image are required" },
+        { error: "Title, image, and subcategory are required" },
         { status: 400 }
       );
     }
@@ -49,6 +54,7 @@ export async function POST(request: NextRequest) {
           title,
           description: description || null,
           imageUrl,
+          subcategoryId,
         },
       }),
       prisma.settings.update({
@@ -66,4 +72,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

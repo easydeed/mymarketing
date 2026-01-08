@@ -11,8 +11,6 @@ interface Settings {
 interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
   createdAt: string;
 }
 
@@ -208,10 +206,7 @@ export default function AdminSettingsPage() {
                   className="p-4 bg-vault-dark rounded-lg flex items-center justify-between"
                 >
                   <div>
-                    <p className="text-white font-medium">
-                      {user.firstName} {user.lastName}
-                    </p>
-                    <p className="text-vault-text-muted text-sm">{user.email}</p>
+                    <p className="text-white font-medium">{user.email}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-vault-text-muted text-xs">Joined</p>

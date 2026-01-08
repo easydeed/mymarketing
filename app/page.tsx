@@ -10,8 +10,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     email: "",
-    firstName: "",
-    lastName: "",
     password: "",
   });
 
@@ -21,7 +19,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -30,7 +28,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Something went wrong");
+        throw new Error(data.error || "Invalid credentials");
       }
 
       router.push("/gallery");
@@ -87,44 +85,11 @@ export default function LoginPage() {
                 Welcome
               </h2>
               <p className="text-vault-text-muted">
-                Enter your details to access the gallery
+                Enter your email to access the gallery
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-vault-text-muted mb-2">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="input-dark"
-                    placeholder="John"
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, firstName: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-vault-text-muted mb-2">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="input-dark"
-                    placeholder="Doe"
-                    value={formData.lastName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, lastName: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-
               <div>
                 <label className="block text-sm text-vault-text-muted mb-2">
                   Email Address
@@ -133,7 +98,7 @@ export default function LoginPage() {
                   type="email"
                   required
                   className="input-dark"
-                  placeholder="john@example.com"
+                  placeholder="you@example.com"
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
@@ -174,10 +139,7 @@ export default function LoginPage() {
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <svg
-                      className="animate-spin h-5 w-5"
-                      viewBox="0 0 24 24"
-                    >
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                       <circle
                         className="opacity-25"
                         cx="12"

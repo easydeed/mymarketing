@@ -3,6 +3,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+interface Category {
+  id: string;
+  name: string;
+  subcategories: Subcategory[];
+}
+
+interface Subcategory {
+  id: string;
+  name: string;
+}
+
 interface Flyer {
   id: string;
   code: string;
@@ -11,36 +22,52 @@ interface Flyer {
   imageUrl: string;
   active: boolean;
   createdAt: string;
+  subcategory: {
+    id: string;
+    name: string;
+    category: { id: string; name: string };
+  };
   _count: { views: number; requests: number };
 }
 
 export default function AdminFlyersPage() {
   const [flyers, setFlyers] = useState<Flyer[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [editingFlyer, setEditingFlyer] = useState<Flyer | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadForm, setUploadForm] = useState({
     title: "",
     description: "",
+    categoryId: "",
+    subcategoryId: "",
     file: null as File | null,
     preview: "",
   });
 
   useEffect(() => {
-    fetchFlyers();
+    fetchData();
   }, []);
 
-  const fetchFlyers = async () => {
+  const fetchData = async () => {
     try {
-      const res = await fetch("/api/admin/flyers");
-      if (res.ok) {
-        const data = await res.json();
+      const [flyersRes, categoriesRes] = await Promise.all([
+        fetch("/api/admin/flyers"),
+        fetch("/api/admin/categories"),
+      ]);
+
+      if (flyersRes.ok) {
+        const data = await flyersRes.json();
         setFlyers(data.flyers);
       }
+
+      if (categoriesRes.ok) {
+        const data = await categoriesRes.json();
+        setCategories(data.categories);
+      }
     } catch (error) {
-      console.error("Error fetching flyers:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +109,7 @@ export default function AdminFlyersPage() {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadForm.file || !uploadForm.title) return;
+    if (!uploadForm.file || !uploadForm.title || !uploadForm.subcategoryId) return;
 
     setIsUploading(true);
     try {
@@ -107,14 +134,15 @@ export default function AdminFlyersPage() {
           title: uploadForm.title,
           description: uploadForm.description,
           imageUrl: url,
+          subcategoryId: uploadForm.subcategoryId,
         }),
       });
 
       if (!flyerRes.ok) throw new Error("Failed to create flyer");
 
-      await fetchFlyers();
+      await fetchData();
       setShowUploadModal(false);
-      setUploadForm({ title: "", description: "", file: null, preview: "" });
+      setUploadForm({ title: "", description: "", categoryId: "", subcategoryId: "", file: null, preview: "" });
     } catch (error) {
       console.error("Error uploading flyer:", error);
     } finally {
@@ -157,6 +185,8 @@ export default function AdminFlyersPage() {
       console.error("Error deleting flyer:", error);
     }
   };
+
+  const selectedCategory = categories.find((c) => c.id === uploadForm.categoryId);
 
   if (isLoading) {
     return (
@@ -202,33 +232,20 @@ export default function AdminFlyersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-vault-border">
-                <th className="text-left p-4 text-vault-text-muted font-medium">
-                  Preview
-                </th>
-                <th className="text-left p-4 text-vault-text-muted font-medium">
-                  Code
-                </th>
-                <th className="text-left p-4 text-vault-text-muted font-medium">
-                  Title
-                </th>
-                <th className="text-left p-4 text-vault-text-muted font-medium">
-                  Views
-                </th>
-                <th className="text-left p-4 text-vault-text-muted font-medium">
-                  Requests
-                </th>
-                <th className="text-left p-4 text-vault-text-muted font-medium">
-                  Status
-                </th>
-                <th className="text-left p-4 text-vault-text-muted font-medium">
-                  Actions
-                </th>
+                <th className="text-left p-4 text-vault-text-muted font-medium">Preview</th>
+                <th className="text-left p-4 text-vault-text-muted font-medium">Code</th>
+                <th className="text-left p-4 text-vault-text-muted font-medium">Title</th>
+                <th className="text-left p-4 text-vault-text-muted font-medium">Category</th>
+                <th className="text-left p-4 text-vault-text-muted font-medium">Views</th>
+                <th className="text-left p-4 text-vault-text-muted font-medium">Requests</th>
+                <th className="text-left p-4 text-vault-text-muted font-medium">Status</th>
+                <th className="text-left p-4 text-vault-text-muted font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {flyers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-vault-text-muted">
+                  <td colSpan={8} className="text-center py-12 text-vault-text-muted">
                     No flyers yet. Click "Add Flyer" to get started.
                   </td>
                 </tr>
@@ -255,6 +272,10 @@ export default function AdminFlyersPage() {
                           {flyer.description}
                         </p>
                       )}
+                    </td>
+                    <td className="p-4">
+                      <p className="text-white text-sm">{flyer.subcategory?.category?.name}</p>
+                      <p className="text-vault-text-muted text-xs">{flyer.subcategory?.name}</p>
                     </td>
                     <td className="p-4 text-white">{flyer._count.views}</td>
                     <td className="p-4 text-white">{flyer._count.requests}</td>
@@ -310,7 +331,7 @@ export default function AdminFlyersPage() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="glass rounded-2xl w-full max-w-lg p-6"
+              className="glass rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
@@ -383,6 +404,56 @@ export default function AdminFlyersPage() {
                   )}
                 </div>
 
+                {/* Category Selection */}
+                <div>
+                  <label className="block text-sm text-vault-text-muted mb-2">
+                    Category *
+                  </label>
+                  <select
+                    required
+                    className="input-dark"
+                    value={uploadForm.categoryId}
+                    onChange={(e) =>
+                      setUploadForm((prev) => ({ 
+                        ...prev, 
+                        categoryId: e.target.value,
+                        subcategoryId: "" 
+                      }))
+                    }
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Subcategory Selection */}
+                {selectedCategory && (
+                  <div>
+                    <label className="block text-sm text-vault-text-muted mb-2">
+                      Subcategory *
+                    </label>
+                    <select
+                      required
+                      className="input-dark"
+                      value={uploadForm.subcategoryId}
+                      onChange={(e) =>
+                        setUploadForm((prev) => ({ ...prev, subcategoryId: e.target.value }))
+                      }
+                    >
+                      <option value="">Select a subcategory</option>
+                      {selectedCategory.subcategories.map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm text-vault-text-muted mb-2">
                     Title *
@@ -426,7 +497,7 @@ export default function AdminFlyersPage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={!uploadForm.file || !uploadForm.title || isUploading}
+                    disabled={!uploadForm.file || !uploadForm.title || !uploadForm.subcategoryId || isUploading}
                     className="btn-gold flex-1 disabled:opacity-50"
                   >
                     {isUploading ? "Uploading..." : "Add Flyer"}

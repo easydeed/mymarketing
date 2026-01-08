@@ -13,8 +13,6 @@ export async function GET() {
       user: {
         id: session.userId,
         email: session.email,
-        firstName: session.firstName,
-        lastName: session.lastName,
       },
     });
   } catch (error) {
@@ -22,4 +20,3 @@ export async function GET() {
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
-

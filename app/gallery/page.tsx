@@ -2,7 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  subcategories: Subcategory[];
+}
+
+interface Subcategory {
+  id: string;
+  name: string;
+  slug: string;
+  _count: { flyers: number };
+}
 
 interface Flyer {
   id: string;
@@ -10,17 +23,23 @@ interface Flyer {
   title: string;
   description?: string;
   imageUrl: string;
+  subcategory: {
+    id: string;
+    name: string;
+    category: { id: string; name: string };
+  };
 }
 
 interface User {
   id: string;
-  firstName: string;
-  lastName: string;
   email: string;
 }
 
 export default function GalleryPage() {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [flyers, setFlyers] = useState<Flyer[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [selectedFlyer, setSelectedFlyer] = useState<Flyer | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,16 +51,30 @@ export default function GalleryPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (selectedSubcategory) {
+      fetchFlyers(selectedSubcategory);
+    } else if (selectedCategory) {
+      fetchFlyersByCategory(selectedCategory);
+    } else {
+      fetchAllFlyers();
+    }
+  }, [selectedCategory, selectedSubcategory]);
+
   const fetchData = async () => {
     try {
-      const [flyersRes, userRes] = await Promise.all([
-        fetch("/api/flyers"),
+      const [categoriesRes, userRes] = await Promise.all([
+        fetch("/api/categories"),
         fetch("/api/auth/me"),
       ]);
 
-      if (flyersRes.ok) {
-        const data = await flyersRes.json();
-        setFlyers(data.flyers);
+      if (categoriesRes.ok) {
+        const data = await categoriesRes.json();
+        setCategories(data.categories);
+        // Select first category by default
+        if (data.categories.length > 0) {
+          setSelectedCategory(data.categories[0].id);
+        }
       }
 
       if (userRes.ok) {
@@ -55,12 +88,47 @@ export default function GalleryPage() {
     }
   };
 
+  const fetchAllFlyers = async () => {
+    try {
+      const res = await fetch("/api/flyers");
+      if (res.ok) {
+        const data = await res.json();
+        setFlyers(data.flyers);
+      }
+    } catch (error) {
+      console.error("Error fetching flyers:", error);
+    }
+  };
+
+  const fetchFlyersByCategory = async (categoryId: string) => {
+    try {
+      const res = await fetch(`/api/flyers?categoryId=${categoryId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFlyers(data.flyers);
+      }
+    } catch (error) {
+      console.error("Error fetching flyers:", error);
+    }
+  };
+
+  const fetchFlyers = async (subcategoryId: string) => {
+    try {
+      const res = await fetch(`/api/flyers?subcategoryId=${subcategoryId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFlyers(data.flyers);
+      }
+    } catch (error) {
+      console.error("Error fetching flyers:", error);
+    }
+  };
+
   const openModal = async (flyer: Flyer) => {
     setSelectedFlyer(flyer);
     setRequestMessage("");
     setSubmitSuccess(false);
 
-    // Track view
     try {
       await fetch(`/api/flyers/${flyer.id}/view`, { method: "POST" });
     } catch (error) {
@@ -97,17 +165,24 @@ export default function GalleryPage() {
     }
   };
 
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setSelectedSubcategory(null);
+  };
+
+  const currentCategory = categories.find((c) => c.id === selectedCategory);
+
   const container = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.08 },
+      transition: { staggerChildren: 0.05 },
     },
   };
 
   const item = {
-    hidden: { opacity: 0, y: 30 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
   };
 
   if (isLoading) {
@@ -132,7 +207,7 @@ export default function GalleryPage() {
           {user && (
             <div className="flex items-center gap-4">
               <span className="text-vault-text-muted text-sm">
-                Welcome, <span className="text-white">{user.firstName}</span>
+                {user.email}
               </span>
               <button
                 onClick={async () => {
@@ -148,30 +223,70 @@ export default function GalleryPage() {
         </div>
       </header>
 
-      {/* Gallery */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-12"
-        >
-          <h2 className="font-display text-4xl font-bold text-white mb-4">
-            Promotional Gallery
-          </h2>
-          <p className="text-vault-text-muted max-w-2xl">
-            Browse our collection of promotional flyers. Click any item to view
-            details and submit a production request.
-          </p>
-        </motion.div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Category Tabs */}
+        <div className="mb-8">
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => handleCategorySelect(category.id)}
+                className={`px-6 py-3 rounded-lg font-medium whitespace-nowrap transition-all ${
+                  selectedCategory === category.id
+                    ? "bg-gold-500 text-vault-black"
+                    : "bg-vault-gray text-vault-text hover:bg-vault-muted"
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+        </div>
 
+        {/* Subcategory Pills */}
+        {currentCategory && currentCategory.subcategories.length > 0 && (
+          <div className="mb-8">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedSubcategory(null)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  !selectedSubcategory
+                    ? "bg-gold-500/20 text-gold-400 border border-gold-500/30"
+                    : "bg-vault-gray text-vault-text-muted hover:text-white"
+                }`}
+              >
+                All {currentCategory.name}
+              </button>
+              {currentCategory.subcategories.map((sub) => (
+                <button
+                  key={sub.id}
+                  onClick={() => setSelectedSubcategory(sub.id)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                    selectedSubcategory === sub.id
+                      ? "bg-gold-500/20 text-gold-400 border border-gold-500/30"
+                      : "bg-vault-gray text-vault-text-muted hover:text-white"
+                  }`}
+                >
+                  {sub.name}
+                  <span className="ml-2 text-xs opacity-60">
+                    ({sub._count.flyers})
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Gallery Grid */}
         {flyers.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-vault-text-muted text-lg">
-              No flyers available yet. Check back soon!
+              No items in this category yet.
             </p>
           </div>
         ) : (
           <motion.div
+            key={`${selectedCategory}-${selectedSubcategory}`}
             variants={container}
             initial="hidden"
             animate="show"
@@ -193,18 +308,18 @@ export default function GalleryPage() {
                       alt={flyer.title}
                       className="w-full rounded-xl"
                     />
-                    {/* Code Badge */}
                     <div className="absolute top-3 right-3 badge-gold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       {flyer.code}
                     </div>
-                    {/* Overlay on hover */}
                     <div className="absolute inset-0 bg-gradient-to-t from-vault-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
-                    {/* Title on hover */}
                     <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <p className="text-gold-400 text-xs mb-1">
+                        {flyer.subcategory.category.name} / {flyer.subcategory.name}
+                      </p>
                       <h3 className="font-display text-lg font-semibold text-white truncate">
                         {flyer.title}
                       </h3>
-                      <p className="text-gold-400 text-sm">{flyer.code}</p>
+                      <p className="text-vault-text-muted text-sm">{flyer.code}</p>
                     </div>
                   </div>
                 </button>
@@ -232,7 +347,6 @@ export default function GalleryPage() {
               className="glass rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col md:flex-row"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Image */}
               <div className="md:w-1/2 relative bg-vault-dark">
                 <img
                   src={selectedFlyer.imageUrl}
@@ -241,10 +355,12 @@ export default function GalleryPage() {
                 />
               </div>
 
-              {/* Details & Form */}
               <div className="md:w-1/2 p-6 md:p-8 flex flex-col">
-                <div className="flex items-start justify-between mb-6">
+                <div className="flex items-start justify-between mb-4">
                   <div>
+                    <p className="text-gold-400 text-xs mb-2">
+                      {selectedFlyer.subcategory.category.name} / {selectedFlyer.subcategory.name}
+                    </p>
                     <span className="badge-gold mb-2 inline-block">
                       {selectedFlyer.code}
                     </span>
@@ -256,18 +372,8 @@ export default function GalleryPage() {
                     onClick={closeModal}
                     className="text-vault-text-muted hover:text-white transition-colors"
                   >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
@@ -280,7 +386,6 @@ export default function GalleryPage() {
 
                 <div className="flex-1" />
 
-                {/* Request Form */}
                 <div className="border-t border-vault-border pt-6">
                   {submitSuccess ? (
                     <motion.div
@@ -289,34 +394,21 @@ export default function GalleryPage() {
                       className="text-center py-8"
                     >
                       <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg
-                          className="w-8 h-8 text-green-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
+                        <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
                       <h4 className="font-display text-xl font-semibold text-white mb-2">
                         Request Submitted!
                       </h4>
                       <p className="text-vault-text-muted">
-                        We'll be in touch about{" "}
-                        <span className="text-gold-400">
-                          {selectedFlyer.code}
-                        </span>
+                        We'll be in touch about <span className="text-gold-400">{selectedFlyer.code}</span>
                       </p>
                     </motion.div>
                   ) : (
                     <>
                       <h4 className="font-display text-lg font-semibold text-white mb-4">
-                        Request This Flyer
+                        Request This Item
                       </h4>
                       <form onSubmit={handleRequest} className="space-y-4">
                         <div>
@@ -325,7 +417,7 @@ export default function GalleryPage() {
                           </label>
                           <textarea
                             className="input-dark resize-none h-24"
-                            placeholder="Any special requirements or notes..."
+                            placeholder="Any special requirements..."
                             value={requestMessage}
                             onChange={(e) => setRequestMessage(e.target.value)}
                           />
