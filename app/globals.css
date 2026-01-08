@@ -1,0 +1,217 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gold-primary: #d4af37;
+  --gold-glow: rgba(212, 175, 55, 0.3);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-vault-black text-vault-text font-body antialiased;
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-vault-dark;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-vault-muted rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-vault-border;
+}
+
+/* Selection */
+::selection {
+  @apply bg-gold-500/30 text-white;
+}
+
+/* Focus styles */
+:focus-visible {
+  @apply outline-none ring-2 ring-gold-500 ring-offset-2 ring-offset-vault-black;
+}
+
+/* Utility classes */
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent;
+  }
+
+  .glass {
+    @apply bg-vault-gray/80 backdrop-blur-md border border-vault-border/50;
+  }
+
+  .glass-dark {
+    @apply bg-vault-black/80 backdrop-blur-md border border-vault-border/50;
+  }
+}
+
+/* Component styles */
+@layer components {
+  /* Flyer card hover effect */
+  .flyer-card {
+    @apply relative overflow-hidden rounded-xl transition-all duration-300 ease-out;
+  }
+
+  .flyer-card:hover {
+    @apply shadow-glow;
+    transform: scale(1.02) translateY(-4px);
+  }
+
+  .flyer-card::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(
+      135deg,
+      transparent 0%,
+      rgba(212, 175, 55, 0.1) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  .flyer-card:hover::before {
+    @apply opacity-100;
+  }
+
+  /* Gold button */
+  .btn-gold {
+    @apply relative overflow-hidden bg-gradient-to-r from-gold-600 to-gold-500 
+           text-vault-black font-semibold px-6 py-3 rounded-lg
+           transition-all duration-300 ease-out
+           hover:shadow-glow hover:scale-[1.02]
+           active:scale-[0.98];
+  }
+
+  .btn-gold::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.2) 0%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.1) 100%
+    );
+  }
+
+  .btn-gold:hover::before {
+    @apply opacity-100;
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply border border-vault-border text-vault-text px-6 py-3 rounded-lg
+           transition-all duration-300 ease-out
+           hover:border-gold-500/50 hover:text-gold-400
+           active:scale-[0.98];
+  }
+
+  /* Input styles */
+  .input-dark {
+    @apply w-full bg-vault-dark border border-vault-border rounded-lg px-4 py-3
+           text-vault-text placeholder:text-vault-text-muted
+           transition-all duration-200
+           focus:border-gold-500/50 focus:ring-2 focus:ring-gold-500/20 focus:outline-none;
+  }
+
+  /* Badge */
+  .badge-gold {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+           bg-gold-500/20 text-gold-400 border border-gold-500/30;
+  }
+
+  /* Masonry grid */
+  .masonry-grid {
+    column-count: 1;
+    column-gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .masonry-grid {
+      column-count: 2;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .masonry-grid {
+      column-count: 3;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .masonry-grid {
+      column-count: 4;
+    }
+  }
+
+  .masonry-item {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  /* Staggered animation helper */
+  .stagger-item {
+    @apply opacity-0 animate-fade-in-up;
+    animation-fill-mode: forwards;
+  }
+
+  /* Modal backdrop */
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black/80 backdrop-blur-sm z-50;
+  }
+
+  /* Shimmer loading effect */
+  .shimmer {
+    @apply relative overflow-hidden;
+    background: linear-gradient(
+      90deg,
+      theme('colors.vault.gray') 0%,
+      theme('colors.vault.muted') 50%,
+      theme('colors.vault.gray') 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  /* Stats card */
+  .stats-card {
+    @apply glass rounded-xl p-6 transition-all duration-300
+           hover:border-gold-500/30 hover:shadow-glow;
+  }
+}
+
+/* Page transitions */
+.page-enter {
+  @apply opacity-0;
+}
+
+.page-enter-active {
+  @apply opacity-100 transition-opacity duration-300;
+}
+
+.page-exit {
+  @apply opacity-100;
+}
+
+.page-exit-active {
+  @apply opacity-0 transition-opacity duration-300;
+}

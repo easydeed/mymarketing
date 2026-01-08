@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  firstName String
+  lastName  String
+  createdAt DateTime @default(now())
+  requests  Request[]
+  views     FlyerView[]
+}
+
+model Flyer {
+  id          String   @id @default(cuid())
+  code        String   @unique // Auto-generated: PROMO-0001, PROMO-0002, etc.
+  title       String
+  description String?
+  imageUrl    String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  views       FlyerView[]
+  requests    Request[]
+}
+
+model FlyerView {
+  id        String   @id @default(cuid())
+  flyer     Flyer    @relation(fields: [flyerId], references: [id], onDelete: Cascade)
+  flyerId   String
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  viewedAt  DateTime @default(now())
+
+  @@index([flyerId])
+  @@index([userId])
+}
+
+model Request {
+  id        String        @id @default(cuid())
+  flyer     Flyer         @relation(fields: [flyerId], references: [id], onDelete: Cascade)
+  flyerId   String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  message   String?
+  status    RequestStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([flyerId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Settings {
+  id              String @id @default("settings")
+  galleryPassword String @default("welcome2024")
+  nextFlyerNumber Int    @default(1)
+}
+
+enum RequestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
