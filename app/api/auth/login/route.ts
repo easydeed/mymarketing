@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
+
+// Force dynamic - never cache this route
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
