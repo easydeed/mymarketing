@@ -16,8 +16,6 @@ interface Request {
   };
   user: {
     id: string;
-    firstName: string;
-    lastName: string;
     email: string;
   };
 }
@@ -80,9 +78,7 @@ export default function AdminRequestsPage() {
     const matchesSearch =
       search === "" ||
       request.flyer.code.toLowerCase().includes(search.toLowerCase()) ||
-      request.user.email.toLowerCase().includes(search.toLowerCase()) ||
-      request.user.firstName.toLowerCase().includes(search.toLowerCase()) ||
-      request.user.lastName.toLowerCase().includes(search.toLowerCase());
+      request.user.email.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -117,7 +113,7 @@ export default function AdminRequestsPage() {
         <div className="flex-1 min-w-[200px]">
           <input
             type="text"
-            placeholder="Search by code, name, or email..."
+            placeholder="Search by code or email..."
             className="input-dark"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -206,10 +202,7 @@ export default function AdminRequestsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-vault-text-muted">Requested by</p>
-                    <p className="text-white">
-                      {request.user.firstName} {request.user.lastName}
-                    </p>
-                    <p className="text-vault-text-muted">{request.user.email}</p>
+                    <p className="text-white">{request.user.email}</p>
                   </div>
                   <div>
                     <p className="text-vault-text-muted">Submitted</p>

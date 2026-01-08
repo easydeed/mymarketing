@@ -31,7 +31,7 @@ export async function GET() {
         orderBy: { createdAt: "desc" },
         include: {
           flyer: { select: { code: true, title: true } },
-          user: { select: { firstName: true, lastName: true, email: true } },
+          user: { select: { email: true } },
         },
       }),
     ]);

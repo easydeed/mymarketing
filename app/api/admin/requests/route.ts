@@ -10,7 +10,7 @@ export async function GET() {
           select: { id: true, code: true, title: true, imageUrl: true },
         },
         user: {
-          select: { id: true, firstName: true, lastName: true, email: true },
+          select: { id: true, email: true },
         },
       },
     });

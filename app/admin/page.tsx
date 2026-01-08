@@ -21,7 +21,7 @@ interface Stats {
     createdAt: string;
     status: string;
     flyer: { code: string; title: string };
-    user: { firstName: string; lastName: string; email: string };
+    user: { email: string };
   }>;
 }
 
@@ -242,7 +242,7 @@ export default function AdminDashboard() {
                       {request.flyer.code}
                     </p>
                     <p className="text-vault-text-muted text-sm">
-                      {request.user.firstName} {request.user.lastName}
+                      {request.user.email}
                     </p>
                   </div>
                   <div className="text-right">
