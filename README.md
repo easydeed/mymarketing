@@ -84,7 +84,8 @@ mymarketing/
 
 | Model | Description |
 |-------|-------------|
-| `User` | Registered users (email only) |
+| `User` | Registered gallery users (email only) |
+| `AdminUser` | Admin users with hashed passwords |
 | `LoginLog` | Authentication attempt tracking |
 | `Category` | Top-level categories (Flyers, Letters, etc.) |
 | `Subcategory` | Nested categories (FSBO, Divorced, etc.) |
@@ -141,17 +142,27 @@ mymarketing/
 ### Default Credentials
 
 - **Gallery Password**: `welcome2024`
-- **Admin Access**: Navigate to `/admin` (no additional auth required)
+- **Admin Login**: Navigate to `/admin/login`
+  - Email: `mymarketing123@yahoo.com`
+  - Password: `Jorge123`
 
 ## 📝 API Reference
 
-### Authentication
+### Gallery Authentication
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/auth/login` | POST | Authenticate with email + password |
-| `/api/auth/logout` | POST | End user session |
-| `/api/auth/me` | GET | Get current user info |
+| `/api/auth/login` | POST | Authenticate with email + gallery password |
+| `/api/auth/logout` | POST | End gallery user session |
+| `/api/auth/me` | GET | Get current gallery user info |
+
+### Admin Authentication
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/admin/auth/login` | POST | Authenticate admin with email + password |
+| `/api/admin/auth/logout` | POST | End admin session |
+| `/api/admin/auth/me` | GET | Get current admin info |
 
 ### Public Endpoints
 
@@ -197,9 +208,14 @@ mymarketing/
 
 ## 🔒 Security Features
 
-- **Shared Password Authentication**: Simple access control for gallery
-- **Session Management**: Secure HTTP-only cookies via Iron Session
-- **Login Logging**: Track all authentication attempts with:
+- **Dual Authentication System**:
+  - **Gallery Users**: Email + shared password for gallery access
+  - **Admin Users**: Separate login with individual credentials (hashed passwords)
+- **Session Management**: Separate HTTP-only cookies via Iron Session
+  - `promovault_session` - Gallery user sessions
+  - `promovault_admin_session` - Admin sessions
+- **Protected Admin Routes**: All `/admin/*` pages require admin authentication
+- **Login Logging**: Track all gallery authentication attempts with:
   - Email address
   - Success/failure status
   - IP address
@@ -227,9 +243,10 @@ BLOB_READ_WRITE_TOKEN=your-vercel-blob-token
 
 The seed script populates the database with:
 
+- **1 Admin User**: `mymarketing123@yahoo.com` (password: `Jorge123`)
 - **4 Categories**: Flyers, Letters, Postcards, Signs
 - **7 Subcategories per category**: FSBO, Divorced, Sellers, Buyers, Expired, Just Listed, Just Sold
-- **10 Sample Flyers**: With placeholder images
+- **29 Sample Flyers**: With placeholder images
 - **Default Settings**: Gallery password set to `welcome2024`
 
 Run seeding:
