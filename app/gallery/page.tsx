@@ -35,6 +35,12 @@ interface User {
   email: string;
 }
 
+interface Admin {
+  id: string;
+  email: string;
+  name?: string;
+}
+
 export default function GalleryPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [flyers, setFlyers] = useState<Flyer[]>([]);
@@ -42,6 +48,7 @@ export default function GalleryPage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [selectedFlyer, setSelectedFlyer] = useState<Flyer | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [admin, setAdmin] = useState<Admin | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [requestMessage, setRequestMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,9 +70,10 @@ export default function GalleryPage() {
 
   const fetchData = async () => {
     try {
-      const [categoriesRes, userRes] = await Promise.all([
+      const [categoriesRes, userRes, adminRes] = await Promise.all([
         fetch("/api/categories"),
         fetch("/api/auth/me"),
+        fetch("/api/admin/auth/me"),
       ]);
 
       if (categoriesRes.ok) {
@@ -80,6 +88,11 @@ export default function GalleryPage() {
       if (userRes.ok) {
         const data = await userRes.json();
         setUser(data.user);
+      }
+
+      if (adminRes.ok) {
+        const data = await adminRes.json();
+        setAdmin(data.admin);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -204,22 +217,52 @@ export default function GalleryPage() {
           <h1 className="font-display text-2xl font-bold text-white">
             Promo<span className="text-gradient">Vault</span>
           </h1>
-          {user && (
-            <div className="flex items-center gap-4">
-              <span className="text-vault-text-muted text-sm">
-                {user.email}
-              </span>
-              <button
-                onClick={async () => {
-                  await fetch("/api/auth/logout", { method: "POST" });
-                  window.location.href = "/";
-                }}
+          <div className="flex items-center gap-4">
+            {admin ? (
+              <>
+                <span className="text-gold-400 text-sm font-medium">
+                  Admin: {admin.email}
+                </span>
+                <a
+                  href="/admin"
+                  className="btn-ghost text-sm py-2 px-4 border border-gold-500/30 text-gold-400 hover:bg-gold-500/10"
+                >
+                  Admin Panel
+                </a>
+                <button
+                  onClick={async () => {
+                    await fetch("/api/admin/auth/logout", { method: "POST" });
+                    window.location.href = "/admin/login";
+                  }}
+                  className="btn-ghost text-sm py-2 px-4 text-red-400 hover:text-red-300"
+                >
+                  Logout
+                </button>
+              </>
+            ) : user ? (
+              <>
+                <span className="text-vault-text-muted text-sm">
+                  {user.email}
+                </span>
+                <button
+                  onClick={async () => {
+                    await fetch("/api/auth/logout", { method: "POST" });
+                    window.location.href = "/";
+                  }}
+                  className="btn-ghost text-sm py-2 px-4"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <a
+                href="/"
                 className="btn-ghost text-sm py-2 px-4"
               >
-                Sign Out
-              </button>
-            </div>
-          )}
+                Sign In
+              </a>
+            )}
+          </div>
         </div>
       </header>
 
