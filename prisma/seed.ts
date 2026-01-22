@@ -1,8 +1,29 @@
 import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
+// Hash password using SHA-256 (same as login route)
+function hashPassword(password: string): string {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
 async function main() {
+  // Create Admin User
+  const adminEmail = 'mymarketing123@yahoo.com';
+  const adminPassword = 'Jorge123';
+  
+  await prisma.adminUser.upsert({
+    where: { email: adminEmail },
+    update: { passwordHash: hashPassword(adminPassword) },
+    create: {
+      email: adminEmail,
+      passwordHash: hashPassword(adminPassword),
+      name: 'Admin',
+    },
+  });
+  console.log('✅ Admin user created: ' + adminEmail);
+
   // Create Settings if not exists
   await prisma.settings.upsert({
     where: { id: 'settings' },
@@ -182,6 +203,7 @@ async function main() {
   });
 
   console.log('✅ Seed completed!');
+  console.log(`   - 1 admin user created`);
   console.log(`   - 4 categories created`);
   console.log(`   - ${sampleFlyers.length} sample flyers created`);
 }

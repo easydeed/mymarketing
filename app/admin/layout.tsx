@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import AdminAuthCheck from "./AdminAuthCheck";
 
 const navItems = [
   {
@@ -68,69 +69,96 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Don't show sidebar on login page
+  if (pathname === "/admin/login") {
+    return <AdminAuthCheck>{children}</AdminAuthCheck>;
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/auth/logout", { method: "POST" });
+      router.push("/admin/login");
+      router.refresh();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-vault-black flex">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-64 glass-dark border-r border-vault-border">
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-vault-border">
-            <Link href="/admin">
-              <h1 className="font-display text-xl font-bold text-white">
-                Promo<span className="text-gradient">Vault</span>
-              </h1>
-              <p className="text-vault-text-muted text-xs mt-1">Admin Panel</p>
-            </Link>
+    <AdminAuthCheck>
+      <div className="min-h-screen bg-vault-black flex">
+        {/* Sidebar */}
+        <aside className="fixed inset-y-0 left-0 w-64 glass-dark border-r border-vault-border">
+          <div className="flex flex-col h-full">
+            {/* Logo */}
+            <div className="p-6 border-b border-vault-border">
+              <Link href="/admin">
+                <h1 className="font-display text-xl font-bold text-white">
+                  Promo<span className="text-gradient">Vault</span>
+                </h1>
+                <p className="text-vault-text-muted text-xs mt-1">Admin Panel</p>
+              </Link>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 p-4 space-y-1">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 relative ${
+                      isActive
+                        ? "text-gold-400"
+                        : "text-vault-text-muted hover:text-white hover:bg-vault-gray"
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeNav"
+                        className="absolute inset-0 bg-gold-500/10 border border-gold-500/30 rounded-lg"
+                        transition={{ type: "spring", duration: 0.5 }}
+                      />
+                    )}
+                    <span className="relative z-10">{item.icon}</span>
+                    <span className="relative z-10 font-medium">{item.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Bottom Actions */}
+            <div className="p-4 border-t border-vault-border space-y-1">
+              <Link
+                href="/gallery"
+                className="flex items-center gap-3 px-4 py-3 text-vault-text-muted hover:text-white transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                </svg>
+                <span>Back to Gallery</span>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 transition-colors w-full text-left"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Logout</span>
+              </button>
+            </div>
           </div>
+        </aside>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 relative ${
-                    isActive
-                      ? "text-gold-400"
-                      : "text-vault-text-muted hover:text-white hover:bg-vault-gray"
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeNav"
-                      className="absolute inset-0 bg-gold-500/10 border border-gold-500/30 rounded-lg"
-                      transition={{ type: "spring", duration: 0.5 }}
-                    />
-                  )}
-                  <span className="relative z-10">{item.icon}</span>
-                  <span className="relative z-10 font-medium">{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Back to Gallery */}
-          <div className="p-4 border-t border-vault-border">
-            <Link
-              href="/gallery"
-              className="flex items-center gap-3 px-4 py-3 text-vault-text-muted hover:text-white transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-              </svg>
-              <span>Back to Gallery</span>
-            </Link>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">
-        {children}
-      </main>
-    </div>
+        {/* Main Content */}
+        <main className="flex-1 ml-64 p-8">
+          {children}
+        </main>
+      </div>
+    </AdminAuthCheck>
   );
 }

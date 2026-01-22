@@ -114,6 +114,16 @@ model Settings {
   nextFlyerNumber Int    @default(1)
 }
 
+// Admin users - separate from gallery users
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 enum RequestStatus {
   PENDING
   IN_PROGRESS
